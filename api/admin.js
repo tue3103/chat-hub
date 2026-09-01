@@ -60,12 +60,13 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const authHeader = req.headers['x-admin-password'] || req.query.pwd || req.body?.password;
+  const paramsObj = { ...(req.query || {}), ...(req.body || {}) };
+  const authHeader = req.headers['x-admin-password'] || paramsObj.pwd || paramsObj.password;
   if (authHeader !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Mật khẩu quản trị không chính xác' });
   }
 
-  const { action, sessionId, siteFilter, replyText, siteId, siteName, systemPrompt, knowledgeText, groupId, qaId } = req.body || req.query || {};
+  const { action, sessionId, siteFilter, replyText, siteId, siteName, systemPrompt, knowledgeText, groupId, qaId } = paramsObj;
 
   // 1. GET ALL SESSIONS & STATS
   if (action === 'get_sessions') {

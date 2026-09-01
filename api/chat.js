@@ -170,9 +170,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const { action, siteId = 'default', sessionId, message, botName = 'SmileX Concierge', groupId, customPrompt, guestName, guestPhone, welcome } = req.body || req.query || {};
+  const paramsObj = { ...(req.query || {}), ...(req.body || {}) };
+  const { action, siteId = 'default', sessionId, message, botName = 'SmileX Concierge', groupId, customPrompt, guestName, guestPhone, welcome } = paramsObj;
 
   if (!sessionId) {
     return res.status(400).json({ error: 'Thiếu sessionId' });
