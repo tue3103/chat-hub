@@ -85,6 +85,23 @@ export default async function handler(req, res) {
           [msgId, targetSession.session_id, targetSession.site_id, 'admin', text, timeStr]
         );
 
+        // AUTO-LEARN: Pair user question with admin answer for future AI responses
+        try {
+          const lastUserMsg = await queryD1(
+            "SELECT text FROM hub_chat_messages WHERE session_id = ? AND sender = 'user' ORDER BY created_at DESC LIMIT 1;",
+            [targetSession.session_id]
+          );
+          if (lastUserMsg && lastUserMsg[0]?.text) {
+            const qaId = 'qa_' + Date.now();
+            await queryD1(
+              'INSERT INTO hub_qa_learnings (id, site_id, user_question, admin_answer) VALUES (?, ?, ?, ?);',
+              [qaId, targetSession.site_id, lastUserMsg[0].text, text]
+            );
+          }
+        } catch (e) {
+          console.error('Auto-learn error:', e);
+        }
+
         // Also save to legacy web_chat_messages if site is web
         if (targetSession.site_id === 'web' || targetSession.site_id === 'web1tr') {
           await queryD1(

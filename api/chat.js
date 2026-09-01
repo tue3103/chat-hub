@@ -1,6 +1,6 @@
 // ==============================================================================
 // SMILEX CENTRALIZED CHAT HUB API (/api/chat)
-// Multi-Tenant, Cloudflare D1 Storage, Groq AI & Telegram Topics
+// Multi-Tenant, Cloudflare D1 Storage, Groq AI & Dynamic Knowledge Base
 // ==============================================================================
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8539622251:AAFAY3UlPj5X--2sjGwv0EtsxKUxF9GSLiU';
@@ -82,27 +82,61 @@ async function createTelegramForumTopic(groupId, title) {
 }
 
 async function generateHubAiResponse(siteId, botName, customPrompt, userMessage) {
-  let prompt = customPrompt;
+  // 1. Fetch dynamic knowledge from D1
+  let systemPrompt = customPrompt || '';
+  let knowledgeText = '';
+  let learnedQA = [];
 
-  if (!prompt) {
+  const knowledgeRows = await queryD1(
+    'SELECT system_prompt, knowledge_text, group_id FROM hub_site_knowledge WHERE site_id = ? LIMIT 1;',
+    [siteId]
+  );
+
+  if (knowledgeRows && knowledgeRows.length > 0) {
+    if (!systemPrompt) systemPrompt = knowledgeRows[0].system_prompt || '';
+    knowledgeText = knowledgeRows[0].knowledge_text || '';
+  }
+
+  // 2. Fetch Auto-Learned Q&As from Admin replies
+  try {
+    const qaRows = await queryD1(
+      'SELECT user_question, admin_answer FROM hub_qa_learnings WHERE site_id = ? ORDER BY created_at DESC LIMIT 6;',
+      [siteId]
+    );
+    if (qaRows && qaRows.length > 0) {
+      learnedQA = qaRows;
+    }
+  } catch (e) {}
+
+  // 3. Fallback prompts if not set
+  if (!systemPrompt) {
     if (siteId.includes('bike')) {
-      prompt = `Bạn là Lễ Tân Trực Tuyến của SmileX Bike Pleiku (bike.smilex.vn). 
-Bạn là người thật, tận tâm, mến khách Gia Lai. Tuyệt đối KHÔNG xưng là AI/bot.
-- Thuê xe đạp thể thao cao cấp (Trek, Giant, Sava Carbon) giá 50.000đ/ngày (hoặc 30.000đ/ngày nếu >7 ngày).
-- Cọc 5.000.000đ/xe (hoàn trả ngay 100% khi trả xe). Không giữ Passport/CCCD gốc.
-- Phí giao xe tận khách sạn: 100.000đ/chuyến. Hoặc nhận xe tại 197 Nguyễn Tất Thành, TP. Pleiku.
-- Kèm nón bảo hiểm, khóa số 4 chữ số, giá kẹp điện thoại, bơm mini.`;
+      systemPrompt = `Bạn là Lễ Tân Trực Tuyến của SmileX Bike Pleiku (bike.smilex.vn). Bạn là người thật, tận tâm, mến khách Gia Lai. Tuyệt đối KHÔNG xưng là AI/bot.`;
     } else if (siteId.includes('web')) {
-      prompt = `Bạn là Chuyên viên Tư Vấn SmileX Web (web.smilex.vn).
-Bạn là người thật, chuyên nghiệp, nhiệt tình. Tuyệt đối KHÔNG xưng là AI/bot.
-- Gói làm website chuẩn SEO trọn gói 1.000.000đ. Bàn giao 24-48 giờ.
-- Miễn phí Hosting Serverless Cloudflare/Vercel trọn đời (0đ/năm).
-- Chuẩn SEO, giao diện responsive điện thoại, tích hợp Live Chat và Google Maps.`;
+      systemPrompt = `Bạn là Chuyên viên Tư Vấn SmileX Web (web.smilex.vn). Bạn là người thật, chuyên nghiệp, nhiệt tình. Tuyệt đối KHÔNG xưng là AI/bot.`;
     } else {
-      prompt = `Bạn là Chuyên viên Chăm sóc Khách hàng của ${botName || 'SmileX'}. 
-Hãy tư vấn lịch sự, tận tâm, chu đáo cho khách hàng (khoảng 2-3 câu). Tuyệt đối không xưng là AI hay bot.`;
+      systemPrompt = `Bạn là Chuyên viên Chăm sóc Khách hàng của ${botName || 'SmileX'}. Hãy tư vấn lịch sự, tận tâm, chu đáo cho khách hàng (khoảng 2-3 câu). Tuyệt đối không xưng là AI hay bot.`;
     }
   }
+
+  // 4. Construct Final Comprehensive AI Context
+  let finalPrompt = `${systemPrompt}\n\n`;
+
+  if (knowledgeText) {
+    finalPrompt += `--- BẢNG THÔNG TIN & TRI THỨC CỐT LÕI VỀ CỬA HÀNG/DỊCH VỤ ---\n${knowledgeText}\n\n`;
+  }
+
+  if (learnedQA.length > 0) {
+    finalPrompt += `--- CÁC CÂU TRẢ LỜI MẪU CHUẨN TỪ QUẢN TRỊ VIÊN ĐÃ HƯỚNG DẪN ---\n`;
+    for (const qa of learnedQA) {
+      finalPrompt += `- Khách hỏi: "${qa.user_question}" -> Trả lời chuẩn: "${qa.admin_answer}"\n`;
+    }
+    finalPrompt += `\n`;
+  }
+
+  finalPrompt += `Quy tắc trả lời:
+- Luôn giữ thái độ thân thiện, tự nhiên, trả lời đúng trọng tâm dựa trên bảng tri thức phía trên (khoảng 2-4 câu).
+- Nếu thông tin nào không có trong bảng tri thức, trả lời lịch sự và xin số điện thoại để chuyên viên tư vấn chi tiết hơn.`;
 
   try {
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -114,11 +148,11 @@ Hãy tư vấn lịch sự, tận tâm, chu đáo cho khách hàng (khoảng 2-3
       body: JSON.stringify({
         model: 'qwen/qwen3.8-27b',
         messages: [
-          { role: 'system', content: prompt },
+          { role: 'system', content: finalPrompt },
           { role: 'user', content: userMessage }
         ],
-        temperature: 0.6,
-        max_tokens: 220
+        temperature: 0.5,
+        max_tokens: 250
       })
     });
     const groqData = await groqRes.json();
@@ -144,7 +178,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Thiếu sessionId' });
   }
 
-  const effectiveGroupId = groupId || DEFAULT_GROUP_MAP[siteId] || process.env.TELEGRAM_GROUP_ID || '-1004294427268';
+  // Lookup target group from D1 site_knowledge or fallback mapping
+  let effectiveGroupId = groupId;
+  if (!effectiveGroupId) {
+    const kRows = await queryD1('SELECT group_id FROM hub_site_knowledge WHERE site_id = ? LIMIT 1;', [siteId]);
+    if (kRows && kRows[0]?.group_id) {
+      effectiveGroupId = kRows[0].group_id;
+    }
+  }
+  if (!effectiveGroupId) {
+    effectiveGroupId = DEFAULT_GROUP_MAP[siteId] || process.env.TELEGRAM_GROUP_ID || '-1004294427268';
+  }
 
   // 1. GET MESSAGES
   if (action === 'get') {

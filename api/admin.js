@@ -1,6 +1,6 @@
 // ==============================================================================
 // SMILEX CHAT HUB - ADMIN DASHBOARD API (/api/admin)
-// Multi-Site Inbox, Realtime Chat, Telegram Sync & Stats
+// Multi-Site Inbox, AI Knowledge Management, Auto-Learned QAs & Telegram Sync
 // ==============================================================================
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'smilex2026';
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Mật khẩu quản trị không chính xác' });
   }
 
-  const { action, sessionId, siteFilter, replyText } = req.body || req.query || {};
+  const { action, sessionId, siteFilter, replyText, siteId, siteName, systemPrompt, knowledgeText, groupId, qaId } = req.body || req.query || {};
 
   // 1. GET ALL SESSIONS & STATS
   if (action === 'get_sessions') {
@@ -91,7 +91,9 @@ export default async function handler(req, res) {
         (SELECT COUNT(*) FROM hub_chat_sessions) as total_sessions,
         (SELECT COUNT(*) FROM hub_chat_messages) as total_messages,
         (SELECT COUNT(DISTINCT site_id) FROM hub_chat_sessions) as active_sites,
-        (SELECT COUNT(*) FROM hub_chat_messages WHERE sender = 'ai') as total_ai_replies
+        (SELECT COUNT(*) FROM hub_chat_messages WHERE sender = 'ai') as total_ai_replies,
+        (SELECT COUNT(*) FROM hub_site_knowledge) as total_knowledge_sites,
+        (SELECT COUNT(*) FROM hub_qa_learnings) as total_learned_qas
     `);
 
     return res.status(200).json({
@@ -125,7 +127,6 @@ export default async function handler(req, res) {
     const msgId = 'admin_' + Date.now();
     const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
-    // Get session info to find group & thread
     const sessRows = await queryD1(
       'SELECT site_id, thread_id, group_id FROM hub_chat_sessions WHERE session_id = ? LIMIT 1;',
       [sessionId]
@@ -135,19 +136,31 @@ export default async function handler(req, res) {
     const threadId = sessRows[0]?.thread_id;
     const groupId = sessRows[0]?.group_id || '-1004294427268';
 
-    // Insert into D1
     await queryD1(
       'INSERT INTO hub_chat_messages (id, session_id, site_id, sender, text, timestamp) VALUES (?, ?, ?, ?, ?, ?);',
       [msgId, sessionId, siteId, 'admin', replyText, timeStr]
     );
 
-    // Update session timestamp
     await queryD1(
       'UPDATE hub_chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE session_id = ?;',
       [sessionId]
     );
 
-    // Sync to Telegram Topic
+    // AUTO-LEARN
+    try {
+      const lastUserMsg = await queryD1(
+        "SELECT text FROM hub_chat_messages WHERE session_id = ? AND sender = 'user' ORDER BY created_at DESC LIMIT 1;",
+        [sessionId]
+      );
+      if (lastUserMsg && lastUserMsg[0]?.text) {
+        const qaId = 'qa_' + Date.now();
+        await queryD1(
+          'INSERT INTO hub_qa_learnings (id, site_id, user_question, admin_answer) VALUES (?, ?, ?, ?);',
+          [qaId, siteId, lastUserMsg[0].text, replyText]
+        );
+      }
+    } catch (e) {}
+
     if (groupId) {
       await sendTelegramMessage(
         groupId,
@@ -171,6 +184,47 @@ export default async function handler(req, res) {
   if (action === 'delete_session' && sessionId) {
     await queryD1('DELETE FROM hub_chat_messages WHERE session_id = ?;', [sessionId]);
     await queryD1('DELETE FROM hub_chat_sessions WHERE session_id = ?;', [sessionId]);
+    return res.status(200).json({ success: true });
+  }
+
+  // 5. GET ALL KNOWLEDGE SITES
+  if (action === 'get_knowledge_list') {
+    const list = await queryD1('SELECT * FROM hub_site_knowledge ORDER BY updated_at DESC;');
+    return res.status(200).json({ success: true, list });
+  }
+
+  // 6. SAVE OR UPDATE KNOWLEDGE SITE
+  if (action === 'save_knowledge' && siteId) {
+    await queryD1(
+      `INSERT OR REPLACE INTO hub_site_knowledge (site_id, site_name, system_prompt, knowledge_text, group_id, updated_at) 
+       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP);`,
+      [siteId, siteName || siteId, systemPrompt || '', knowledgeText || '', groupId || '']
+    );
+    return res.status(200).json({ success: true });
+  }
+
+  // 7. DELETE KNOWLEDGE SITE
+  if (action === 'delete_knowledge' && siteId) {
+    await queryD1('DELETE FROM hub_site_knowledge WHERE site_id = ?;', [siteId]);
+    return res.status(200).json({ success: true });
+  }
+
+  // 8. GET QA LEARNINGS
+  if (action === 'get_qa_learnings') {
+    let sql = 'SELECT * FROM hub_qa_learnings';
+    const params = [];
+    if (siteId && siteId !== 'all') {
+      sql += ' WHERE site_id = ?';
+      params.push(siteId);
+    }
+    sql += ' ORDER BY created_at DESC LIMIT 50;';
+    const list = await queryD1(sql, params);
+    return res.status(200).json({ success: true, list });
+  }
+
+  // 9. DELETE QA LEARNING
+  if (action === 'delete_qa_learning' && qaId) {
+    await queryD1('DELETE FROM hub_qa_learnings WHERE id = ?;', [qaId]);
     return res.status(200).json({ success: true });
   }
 

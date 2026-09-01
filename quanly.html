@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmileX Chat Hub - Trung Tâm Quản Lý Live Chat Đa Website</title>
+  <title>SmileX Chat Hub - Quản Trị & Huấn Luyện AI Đa Website</title>
   
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +17,7 @@
       --accent-emerald: #10b981;
       --accent-cyan: #00f0ff;
       --accent-purple: #a855f7;
+      --accent-amber: #f59e0b;
       --bg-main: #070913;
       --bg-card: #0f172a;
       --bg-darker: #090d16;
@@ -42,7 +43,7 @@
     .admin-navbar {
       background: rgba(15, 23, 42, 0.95);
       border-bottom: 1px solid var(--border-card);
-      padding: 12px 24px;
+      padding: 10px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -67,30 +68,30 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .admin-badge {
-      background: rgba(99, 102, 241, 0.2);
-      border: 1px solid var(--primary);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-      padding: 2px 10px;
-      border-radius: 99px;
-      margin-left: 8px;
-    }
-    .admin-stats-row {
+    .nav-tabs {
       display: flex;
-      gap: 20px;
-      align-items: center;
+      gap: 8px;
     }
-    .stat-chip {
+    .nav-tab-btn {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 4px 12px;
-      border-radius: 10px;
-      font-size: 12px;
       color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
     }
-    .stat-chip b { color: #fff; }
+    .nav-tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
     .btn-logout {
       background: rgba(239, 68, 68, 0.2);
       border: 1px solid rgba(239, 68, 68, 0.4);
@@ -102,14 +103,17 @@
       cursor: pointer;
     }
 
-    /* WORKSPACE CONTAINER */
-    .admin-workspace {
-      display: flex;
+    /* VIEW PANES */
+    .view-pane {
+      display: none;
       flex: 1;
       overflow: hidden;
     }
+    .view-pane.active {
+      display: flex;
+    }
 
-    /* LEFT INBOX PANE */
+    /* 1. INBOX WORKSPACE */
     .inbox-pane {
       width: 360px;
       background: var(--bg-darker);
@@ -198,10 +202,9 @@
       padding: 2px 6px;
       border-radius: 4px;
       text-transform: uppercase;
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
     }
-    .site-tag.bike { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-    .site-tag.web1tr, .site-tag.web { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
-    .site-tag.spa { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
     .session-preview {
       font-size: 12px;
       color: var(--text-muted);
@@ -215,7 +218,6 @@
       color: #64748b;
     }
 
-    /* RIGHT CHAT PANE */
     .chat-pane {
       flex: 1;
       display: flex;
@@ -233,11 +235,6 @@
     }
     .chat-pane-user-info b { font-size: 16px; color: #fff; display: block; }
     .chat-pane-user-info span { font-size: 12px; color: var(--text-muted); }
-    .chat-pane-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
     .btn-action {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -307,7 +304,6 @@
       text-align: right;
     }
 
-    /* CHAT INPUT */
     .chat-reply-area {
       padding: 14px 20px;
       background: var(--bg-darker);
@@ -326,7 +322,6 @@
       outline: none;
       font-family: inherit;
     }
-    .chat-reply-input:focus { border-color: var(--primary); }
     .btn-send-reply {
       background: var(--primary);
       border: none;
@@ -334,31 +329,119 @@
       padding: 0 22px;
       border-radius: 12px;
       font-weight: 800;
-      font-size: 14px;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: filter 0.2s ease;
     }
-    .btn-send-reply:hover { filter: brightness(1.15); }
 
-    /* EMPTY STATE */
-    .empty-state {
+    /* 2. KNOWLEDGE BASE VIEW */
+    .kb-container {
       flex: 1;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      gap: 12px;
+      background: var(--bg-main);
+      overflow: hidden;
     }
+    .kb-sidebar {
+      width: 320px;
+      background: var(--bg-darker);
+      border-right: 1px solid var(--border-card);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .kb-site-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+    }
+    .kb-site-item:hover { background: rgba(255, 255, 255, 0.08); }
+    .kb-site-item.active { background: rgba(99, 102, 241, 0.15); border-color: var(--primary); }
+    .kb-site-name { font-size: 14px; font-weight: 800; color: #fff; }
+    .kb-site-id { font-size: 11px; color: var(--text-muted); }
+
+    .kb-editor-pane {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .kb-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .kb-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .kb-input, .kb-textarea {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+    .kb-textarea { min-height: 180px; line-height: 1.5; resize: vertical; }
+    .kb-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .btn-save-kb {
+      background: var(--accent-emerald);
+      border: none;
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-delete-kb {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* 3. AUTO LEARNING VIEW */
+    .learn-container {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .learn-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-card);
+    }
+    .learn-table th, .learn-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-card);
+      font-size: 13px;
+      text-align: left;
+    }
+    .learn-table th { background: rgba(255, 255, 255, 0.03); color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
 
     /* AUTH MODAL */
     .auth-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0, 0, 0, 0.92);
       backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
@@ -371,15 +454,7 @@
       border-radius: 20px;
       padding: 32px;
       width: 380px;
-      max-width: 90vw;
       text-align: center;
-    }
-    .auth-title {
-      font-family: var(--font-heading);
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      margin-bottom: 8px;
     }
     .auth-input {
       width: 100%;
@@ -411,8 +486,8 @@
   <div class="auth-overlay" id="authModal">
     <div class="auth-card">
       <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
-      <div class="auth-title">Quản Trị SmileX Chat Hub</div>
-      <p style="font-size: 13px; color: var(--text-muted);">Vui lòng nhập mật khẩu quản trị để truy cập hộp thư trung tâm</p>
+      <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Quản Trị SmileX Chat Hub</h2>
+      <p style="font-size: 13px; color: var(--text-muted);">Vui lòng nhập mật khẩu quản trị để truy cập</p>
       <form onsubmit="handleLogin(event)">
         <input type="password" id="authPassword" class="auth-input" placeholder="Nhập mật khẩu (smilex2026)" required autofocus>
         <button type="submit" class="btn-auth-submit">Đăng Nhập Quản Trị</button>
@@ -425,38 +500,36 @@
     <a href="/" class="admin-brand">
       <span class="admin-brand-icon">🚀</span>
       <span class="admin-brand-title">SmileX Chat Hub</span>
-      <span class="admin-badge">Admin Workspace</span>
     </a>
-    <div class="admin-stats-row">
-      <div class="stat-chip">💬 Tổng phiên: <b id="statSessions">0</b></div>
-      <div class="stat-chip">🌐 Website: <b id="statSites">0</b></div>
-      <div class="stat-chip">🤖 AI Trả Lời: <b id="statAi">0</b></div>
-      <button class="btn-logout" onclick="logout()">Đăng Xuất</button>
+
+    <div class="nav-tabs">
+      <button class="nav-tab-btn active" onclick="switchTab('inbox', this)">💬 Hộp Thư Hội Thoại</button>
+      <button class="nav-tab-btn" onclick="switchTab('knowledge', this)">🧠 Tri Thức & Huấn Luyện AI</button>
+      <button class="nav-tab-btn" onclick="switchTab('learning', this)">💡 Bộ Nhớ Tự Học</button>
     </div>
+
+    <button class="btn-logout" onclick="logout()">Đăng Xuất</button>
   </header>
 
-  <!-- WORKSPACE -->
-  <main class="admin-workspace">
-    <!-- LEFT INBOX LIST -->
+  <!-- 1. TAB: INBOX WORKSPACE -->
+  <main class="view-pane active" id="paneInbox">
     <section class="inbox-pane">
       <div class="inbox-header">
         <input type="text" id="inboxSearch" class="inbox-search" placeholder="🔍 Tìm theo tên, SĐT, nội dung..." oninput="renderSessionList()">
         <div class="inbox-filters">
           <button class="filter-btn active" onclick="setFilter('all', this)">Tất Cả</button>
           <button class="filter-btn" onclick="setFilter('bike', this)">🚴 Bike</button>
-          <button class="filter-btn" onclick="setFilter('web1tr', this)">🌐 Web 1Tr</button>
-          <button class="filter-btn" onclick="setFilter('spa', this)">🦷 Spa / Y Tế</button>
+          <button class="filter-btn" onclick="setFilter('web', this)">🌐 Web</button>
         </div>
       </div>
       <div class="inbox-list" id="inboxList">
-        <div style="text-align:center; padding: 30px; color: var(--text-muted); font-size:13px;">Đang tải danh sách hội thoại...</div>
+        <div style="text-align:center; padding: 30px; color: var(--text-muted); font-size:13px;">Đang tải danh sách...</div>
       </div>
     </section>
 
-    <!-- RIGHT CHAT DETAIL -->
     <section class="chat-pane" id="chatPane">
-      <div class="empty-state" id="emptyChat">
-        <span style="font-size: 50px;">💬</span>
+      <div id="emptyChat" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted);">
+        <span style="font-size: 50px; margin-bottom: 10px;">💬</span>
         <div>Chọn một cuộc hội thoại bên trái để bắt đầu chat trực tiếp</div>
       </div>
 
@@ -476,11 +549,86 @@
         <div class="chat-timeline" id="chatTimeline"></div>
 
         <form class="chat-reply-area" onsubmit="handleSendReply(event)">
-          <input type="text" id="replyInput" class="chat-reply-input" placeholder="Gõ tin nhắn trả lời khách (sẽ đồng bộ cả web & Telegram)..." autocomplete="off" required>
+          <input type="text" id="replyInput" class="chat-reply-input" placeholder="Gõ tin nhắn trả lời (đồng bộ cả web & Telegram)..." autocomplete="off" required>
           <button type="submit" class="btn-send-reply">Gửi ➤</button>
         </form>
       </div>
     </section>
+  </main>
+
+  <!-- 2. TAB: KNOWLEDGE BASE -->
+  <main class="view-pane" id="paneKnowledge">
+    <div class="kb-container">
+      <aside class="kb-sidebar">
+        <button class="btn-action" style="background:var(--primary); width:100%; justify-content:center; padding:10px;" onclick="createNewKnowledge()">
+          ➕ Thêm Website / Khách Mới
+        </button>
+        <div id="kbSiteList" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1;"></div>
+      </aside>
+
+      <section class="kb-editor-pane">
+        <h2 id="kbEditorTitle" style="font-size: 18px; font-weight: 800;">Chỉnh Sửa Tri Thức AI</h2>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="kb-field">
+            <label class="kb-label">Mã Site ID (data-site):</label>
+            <input type="text" id="kbSiteId" class="kb-input" placeholder="vd: spahoamai">
+          </div>
+          <div class="kb-field">
+            <label class="kb-label">Tên Thương Hiệu (data-name):</label>
+            <input type="text" id="kbSiteName" class="kb-input" placeholder="vd: Spa Hoa Mai Pleiku">
+          </div>
+        </div>
+
+        <div class="kb-field">
+          <label class="kb-label">Telegram Group ID (data-group):</label>
+          <input type="text" id="kbGroupId" class="kb-input" placeholder="vd: -1004294427268">
+        </div>
+
+        <div class="kb-field">
+          <label class="kb-label">Kịch Bản Vai Diễn AI (System Persona Prompt):</label>
+          <textarea id="kbSystemPrompt" class="kb-textarea" style="min-height:90px;" placeholder="Bạn là Lễ Tân Spa Hoa Mai... Luôn xưng hô lịch sự, thân thiện."></textarea>
+        </div>
+
+        <div class="kb-field">
+          <label class="kb-label">Tài Liệu Tri Thức Cốt Lõi (Bảng giá, Menu, Địa chỉ, FAQ, Quy định...):</label>
+          <textarea id="kbKnowledgeText" class="kb-textarea" placeholder="- Bảng giá: Dịch vụ A giá 200k, Dịch vụ B giá 500k...&#10;- Địa chỉ: 45 Lê Duẩn, Pleiku&#10;- Giờ mở cửa: 8h - 21h hàng ngày&#10;- Khi khách đặt lịch: Xin Tên + SĐT"></textarea>
+        </div>
+
+        <div class="kb-actions">
+          <button class="btn-save-kb" onclick="saveKnowledge()">💾 Lưu Tri Thức AI</button>
+          <button class="btn-delete-kb" onclick="deleteKnowledge()">🗑️ Xóa Cấu Hình</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 3. TAB: AUTO-LEARNED Q&A -->
+  <main class="view-pane" id="paneLearning">
+    <div class="learn-container">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 800;">💡 Bộ Nhớ Tự Học Từ Quản Trị Viên</h2>
+          <p style="font-size: 13px; color: var(--text-muted);">Mỗi khi bạn trả lời khách trên Telegram hoặc Web, câu trả lời sẽ tự động lưu vào đây để AI phục vụ cho các khách sau.</p>
+        </div>
+        <button class="btn-action" onclick="fetchLearnings()">🔄 Làm Mới</button>
+      </div>
+
+      <table class="learn-table">
+        <thead>
+          <tr>
+            <th>Website</th>
+            <th>Câu Hỏi Của Khách</th>
+            <th>Câu Trả Lời Chuẩn Của Bạn</th>
+            <th>Thời Gian</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody id="learningTableBody">
+          <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">Đang tải dữ liệu...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </main>
 
   <script>
@@ -489,6 +637,8 @@
     let currentFilter = 'all';
     let activeSessionId = null;
     let pollInterval = null;
+    let allKnowledge = [];
+    let selectedKbSiteId = null;
 
     function handleLogin(e) {
       e.preventDefault();
@@ -505,6 +655,23 @@
       location.reload();
     }
 
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view-pane').forEach(p => p.classList.remove('active'));
+
+      btn.classList.add('active');
+      if (tab === 'inbox') {
+        document.getElementById('paneInbox').classList.add('active');
+      } else if (tab === 'knowledge') {
+        document.getElementById('paneKnowledge').classList.add('active');
+        fetchKnowledgeList();
+      } else if (tab === 'learning') {
+        document.getElementById('paneLearning').classList.add('active');
+        fetchLearnings();
+      }
+    }
+
+    // 1. INBOX LOGIC
     async function fetchSessions() {
       try {
         const res = await fetch(`/api/admin?action=get_sessions&pwd=${encodeURIComponent(adminToken)}`);
@@ -515,11 +682,7 @@
         const data = await res.json();
         if (data.success) {
           allSessions = data.sessions || [];
-          document.getElementById('statSessions').innerText = data.stats?.total_sessions || allSessions.length;
-          document.getElementById('statSites').innerText = data.stats?.active_sites || 0;
-          document.getElementById('statAi').innerText = data.stats?.total_ai_replies || 0;
           renderSessionList();
-
           if (activeSessionId) {
             loadActiveChat(activeSessionId, false);
           }
@@ -676,6 +839,156 @@
       } catch (err) {
         console.error('Delete session error:', err);
       }
+    }
+
+    // 2. KNOWLEDGE BASE LOGIC
+    async function fetchKnowledgeList() {
+      try {
+        const res = await fetch(`/api/admin?action=get_knowledge_list&pwd=${encodeURIComponent(adminToken)}`);
+        const data = await res.json();
+        if (data.success) {
+          allKnowledge = data.list || [];
+          renderKnowledgeList();
+          if (allKnowledge.length > 0 && !selectedKbSiteId) {
+            selectKbSite(allKnowledge[0].site_id);
+          }
+        }
+      } catch (e) {}
+    }
+
+    function renderKnowledgeList() {
+      const el = document.getElementById('kbSiteList');
+      el.innerHTML = allKnowledge.map(k => `
+        <div class="kb-site-item ${k.site_id === selectedKbSiteId ? 'active' : ''}" onclick="selectKbSite('${k.site_id}')">
+          <div class="kb-site-name">${escapeHtml(k.site_name || k.site_id)}</div>
+          <div class="kb-site-id">Site ID: <b>${k.site_id}</b></div>
+        </div>
+      `).join('');
+    }
+
+    function selectKbSite(siteId) {
+      selectedKbSiteId = siteId;
+      renderKnowledgeList();
+      const k = allKnowledge.find(x => x.site_id === siteId);
+      if (k) {
+        document.getElementById('kbEditorTitle').innerText = `Chỉnh Sửa Tri Thức: ${k.site_name}`;
+        document.getElementById('kbSiteId').value = k.site_id;
+        document.getElementById('kbSiteId').disabled = true;
+        document.getElementById('kbSiteName').value = k.site_name;
+        document.getElementById('kbGroupId').value = k.group_id || '';
+        document.getElementById('kbSystemPrompt').value = k.system_prompt || '';
+        document.getElementById('kbKnowledgeText').value = k.knowledge_text || '';
+      }
+    }
+
+    function createNewKnowledge() {
+      selectedKbSiteId = null;
+      renderKnowledgeList();
+      document.getElementById('kbEditorTitle').innerText = '➕ Thêm Tri Thức Cho Website Mới';
+      document.getElementById('kbSiteId').value = '';
+      document.getElementById('kbSiteId').disabled = false;
+      document.getElementById('kbSiteName').value = '';
+      document.getElementById('kbGroupId').value = '-1004294427268';
+      document.getElementById('kbSystemPrompt').value = 'Bạn là Chuyên viên CSKH của [Tên Shop]. Luôn tư vấn thân thiện, tự nhiên và nhiệt tình.';
+      document.getElementById('kbKnowledgeText').value = '- Địa chỉ:\n- Bảng giá dịch vụ:\n- Giờ mở cửa:\n- Quy định/Chính sách:';
+    }
+
+    async function saveKnowledge() {
+      const siteId = document.getElementById('kbSiteId').value.trim();
+      const siteName = document.getElementById('kbSiteName').value.trim();
+      const groupId = document.getElementById('kbGroupId').value.trim();
+      const systemPrompt = document.getElementById('kbSystemPrompt').value.trim();
+      const knowledgeText = document.getElementById('kbKnowledgeText').value.trim();
+
+      if (!siteId || !siteName) {
+        alert('Vui lòng nhập Site ID và Tên thương hiệu!');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save_knowledge',
+            password: adminToken,
+            siteId,
+            siteName,
+            groupId,
+            systemPrompt,
+            knowledgeText
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Đã lưu Tri Thức AI thành công!');
+          selectedKbSiteId = siteId;
+          fetchKnowledgeList();
+        }
+      } catch (e) {}
+    }
+
+    async function deleteKnowledge() {
+      const siteId = document.getElementById('kbSiteId').value.trim();
+      if (!siteId) return;
+      if (!confirm(`Bạn có chắc chắn muốn xóa tri thức của website [${siteId}]?`)) return;
+
+      try {
+        await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete_knowledge',
+            password: adminToken,
+            siteId
+          })
+        });
+        selectedKbSiteId = null;
+        fetchKnowledgeList();
+      } catch (e) {}
+    }
+
+    // 3. AUTO LEARNING LOGIC
+    async function fetchLearnings() {
+      try {
+        const res = await fetch(`/api/admin?action=get_qa_learnings&pwd=${encodeURIComponent(adminToken)}`);
+        const data = await res.json();
+        if (data.success) {
+          const tbody = document.getElementById('learningTableBody');
+          const list = data.list || [];
+          if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">Chưa có dữ liệu tự học nào. Hãy thử trả lời khách trong Telegram để AI ghi nhớ nhé!</td></tr>';
+            return;
+          }
+          tbody.innerHTML = list.map(q => `
+            <tr>
+              <td><span class="site-tag">${q.site_id}</span></td>
+              <td><b>${escapeHtml(q.user_question)}</b></td>
+              <td style="color:#86efac;">${escapeHtml(q.admin_answer)}</td>
+              <td style="color:#64748b; font-size:11px;">${new Date(q.created_at).toLocaleTimeString('vi-VN')}</td>
+              <td>
+                <button class="btn-action delete" style="padding:3px 8px; font-size:11px;" onclick="deleteQa('${q.id}')">Xóa</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {}
+    }
+
+    async function deleteQa(qaId) {
+      if (!confirm('Xóa cặp câu hỏi - câu trả lời này khỏi bộ nhớ AI?')) return;
+      try {
+        await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete_qa_learning',
+            password: adminToken,
+            qaId
+          })
+        });
+        fetchLearnings();
+      } catch (e) {}
     }
 
     function escapeHtml(str) {
