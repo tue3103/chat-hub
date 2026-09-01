@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmileX Chat Hub - Nền Tảng Live Chat & AI Concierge Đa Trang Web</title>
+  <meta name="description" content="Nền tảng Live Chat & AI thông minh cho hệ sinh thái SmileX. Nhúng 1 dòng code duy nhất vào bất kỳ website nào, đồng bộ Telegram Forum 2 chiều tự động.">
+  
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.4);
+      --accent-cyan: #00f0ff;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-gold: #fbbf24;
+      --bg-main: #070913;
+      --bg-card: rgba(15, 20, 42, 0.85);
+      --border-card: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-heading: 'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* HEADER */
+    .header {
+      padding: 60px 0 40px;
+      text-align: center;
+      position: relative;
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid var(--primary);
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+    .header-title {
+      font-family: var(--font-heading);
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 900;
+      line-height: 1.25;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header-desc {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    /* GRID */
+    .hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(16px);
+      position: relative;
+    }
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* FORM GENERATOR */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+    }
+    .form-select option {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    /* CODE BOX */
+    .code-box {
+      background: #090d16;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 16px;
+      padding: 18px;
+      position: relative;
+      margin-top: 14px;
+    }
+    .code-content {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      color: #38bdf8;
+      line-height: 1.5;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+    .btn-copy {
+      background: var(--primary);
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      transition: filter 0.2s ease;
+    }
+    .btn-copy:hover {
+      filter: brightness(1.15);
+    }
+
+    /* FEATURE BADGES */
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .feature-icon {
+      font-size: 22px;
+      background: rgba(255, 255, 255, 0.05);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .feature-text b { color: #fff; }
+    .feature-text p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+    /* FOOTER */
+    .footer {
+      text-align: center;
+      padding: 40px 0;
+      border-top: 1px solid var(--border-card);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-badge">🚀 SMILEX CHAT HUB PLATFORM</div>
+      <h1 class="header-title">Nền Tảng Live Chat & AI Concierge Đa Nền Tảng</h1>
+      <p class="header-desc">
+        Chỉ cần nhúng <b>đúng 1 dòng code</b> vào bất kỳ website nào để sở hữu ngay khung Live Chat bóng bẩy, AI tư vấn sau 0.3s và tự động tạo Forum Topic trên Telegram!
+      </p>
+    </header>
+
+    <!-- GRID -->
+    <div class="hub-grid">
+      <!-- 1. GENERATOR -->
+      <div class="card">
+        <div class="card-title"><span>⚡</span> Trình Tạo Mã Nhúng 1-Chạm</div>
+        
+        <div class="form-group">
+          <label class="form-label">Mã Định Danh Website (data-site):</label>
+          <select id="genSite" class="form-select" onchange="updateCode()">
+            <option value="bike">bike (SmileX Bike Rental Pleiku)</option>
+            <option value="web1tr">web1tr (SmileX Web 1 Triệu)</option>
+            <option value="spa">spa (Nha Khoa, Spa & Thẩm Mỹ)</option>
+            <option value="store">store (Cửa Hàng / Bán Hàng Online)</option>
+            <option value="custom">custom (Tùy chỉnh theo yêu cầu)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tên Thương Hiệu Hiển Thị (data-name):</label>
+          <input type="text" id="genName" class="form-input" value="SmileX Web Concierge" oninput="updateCode()">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label class="form-label">Màu Chủ Đạo (data-color):</label>
+            <select id="genColor" class="form-select" onchange="updateCode()">
+              <option value="#6366f1">Indigo (#6366f1)</option>
+              <option value="#10b981">Emerald (#10b981)</option>
+              <option value="#06b6d4">Cyan (#06b6d4)</option>
+              <option value="#f43f5e">Rose (#f43f5e)</option>
+              <option value="#f59e0b">Amber (#f59e0b)</option>
+              <option value="#8b5cf6">Purple (#8b5cf6)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Icon Nút Chat (data-avatar):</label>
+            <input type="text" id="genAvatar" class="form-input" value="💬" oninput="updateCode()">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Telegram Group ID (data-group):</label>
+          <input type="text" id="genGroup" class="form-input" value="-1004294427268" placeholder="Ví dụ: -1004294427268" oninput="updateCode()">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Lời Chào Mở Đầu (data-welcome):</label>
+          <input type="text" id="genWelcome" class="form-input" value="👋 Chào bạn! Chúng tôi có thể giúp gì cho bạn hôm nay?" oninput="updateCode()">
+        </div>
+
+        <div class="code-box">
+          <div class="code-content" id="codeOutput"></div>
+        </div>
+
+        <button class="btn-copy" onclick="copyCode()">
+          <span id="copyBtnText">📋 Sao Chép Mã Nhúng HTML</span>
+        </button>
+      </div>
+
+      <!-- 2. SYSTEM CAPABILITIES -->
+      <div class="card">
+        <div class="card-title"><span>🌟</span> Sức Mạnh Vượt Trội</div>
+
+        <div class="feature-item">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-text">
+            <b>1 Dòng Script Duy Nhất:</b>
+            <p>Không cần cài đặt thư viện rườm rà. Tự động load CSS isolated không bị đè font hay vỡ giao diện web gốc.</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">🤖</div>
+          <div class="feature-text">
+            <b>AI Groq LPU Đa Kịch Bản:</b>
+            <p>Tự động nhận diện ngành nghề để tư vấn chuẩn xác: Cho thuê xe đạp, Làm web 1 triệu, Spa, Bán hàng...</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">📱</div>
+          <div class="feature-text">
+            <b>Tự Tạo Topic Telegram Độc Lập:</b>
+            <p>Mỗi khách hàng tự tạo 1 Topic riêng trong nhóm Telegram của bạn. Quản trị viên chỉ cần chat trong topic là trả lời thẳng cho khách.</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">🛡️</div>
+          <div class="feature-text">
+            <b>Lưu Trữ Serverless Cloudflare D1:</b>
+            <p>Toàn bộ lịch sử chat được lưu trữ vĩnh viễn trên Cloudflare D1. Không giới hạn số lượng tin nhắn.</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">🎨</div>
+          <div class="feature-text">
+            <b>JavaScript SDK Mở Rộng:</b>
+            <p>Hỗ trợ gọi hàm <code>window.SmileXChat.open()</code> hoặc <code>SmileXChat.send('...')</code> từ bất kỳ nút bấm nào trên website.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div>© 2026 SmileX Chat Hub • Nền tảng Live Chat & AI Đa Trang Web • chat.smilex.vn</div>
+    </footer>
+  </div>
+
+  <!-- EMBED CODE GENERATOR SCRIPT -->
+  <script>
+    function updateCode() {
+      const site = document.getElementById('genSite').value;
+      const name = document.getElementById('genName').value.trim();
+      const color = document.getElementById('genColor').value;
+      const avatar = document.getElementById('genAvatar').value.trim() || '💬';
+      const group = document.getElementById('genGroup').value.trim();
+      const welcome = document.getElementById('genWelcome').value.trim();
+
+      const origin = window.location.origin;
+      const code = `<script src="${origin}/widget.js"\n  data-site="${site}"\n  data-name="${name}"\n  data-color="${color}"\n  data-avatar="${avatar}"\n  data-group="${group}"\n  data-welcome="${welcome}">\x3c/script>`;
+
+      document.getElementById('codeOutput').innerText = code;
+    }
+
+    function copyCode() {
+      const code = document.getElementById('codeOutput').innerText;
+      navigator.clipboard.writeText(code);
+      const btn = document.getElementById('copyBtnText');
+      btn.innerText = '✅ Đã Sao Chép Vào Bộ Nhớ Tạm!';
+      setTimeout(() => {
+        btn.innerText = '📋 Sao Chép Mã Nhúng HTML';
+      }, 2500);
+    }
+
+    document.addEventListener('DOMContentLoaded', updateCode);
+  </script>
+
+  <!-- SELF-EMBED TEST DRIVE -->
+  <script src="/widget.js" 
+          data-site="chathub" 
+          data-name="SmileX Hub Concierge" 
+          data-color="#6366f1" 
+          data-avatar="🚀" 
+          data-group="-1004294427268" 
+          data-welcome="👋 Chào mừng bạn đến với SmileX Chat Hub! Bạn có thể thử nghiệm chat trực tiếp tại đây."></script>
+
+</body>
+</html>

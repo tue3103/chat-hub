@@ -1,0 +1,9 @@
+{
+  "name": "smilex-chat-hub",
+  "version": "1.0.0",
+  "description": "SmileX Centralized Live Chat & AI Concierge Hub",
+  "main": "widget.js",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
