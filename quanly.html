@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmileX Chat Hub - Trung Tâm Quản Lý Live Chat Đa Website</title>
+  
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.4);
+      --accent-emerald: #10b981;
+      --accent-cyan: #00f0ff;
+      --accent-purple: #a855f7;
+      --bg-main: #070913;
+      --bg-card: #0f172a;
+      --bg-darker: #090d16;
+      --border-card: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-heading: 'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP NAVBAR */
+    .admin-navbar {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid var(--border-card);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .admin-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+    .admin-brand-icon {
+      font-size: 24px;
+      filter: drop-shadow(0 0 10px var(--primary-glow));
+    }
+    .admin-brand-title {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .admin-badge {
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid var(--primary);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 10px;
+      border-radius: 99px;
+      margin-left: 8px;
+    }
+    .admin-stats-row {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .stat-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 4px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .stat-chip b { color: #fff; }
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* WORKSPACE CONTAINER */
+    .admin-workspace {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* LEFT INBOX PANE */
+    .inbox-pane {
+      width: 360px;
+      background: var(--bg-darker);
+      border-right: 1px solid var(--border-card);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .inbox-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-card);
+    }
+    .inbox-search {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 12px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .inbox-filters {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .inbox-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .session-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .session-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .session-card.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--primary);
+    }
+    .session-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .session-name {
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .site-tag {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .site-tag.bike { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .site-tag.web1tr, .site-tag.web { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+    .site-tag.spa { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+    .session-preview {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 4px;
+    }
+    .session-time {
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    /* RIGHT CHAT PANE */
+    .chat-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
+      overflow: hidden;
+    }
+    .chat-pane-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-card);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.8);
+    }
+    .chat-pane-user-info b { font-size: 16px; color: #fff; display: block; }
+    .chat-pane-user-info span { font-size: 12px; color: var(--text-muted); }
+    .chat-pane-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .btn-action {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .btn-action:hover { background: rgba(255, 255, 255, 0.15); }
+    .btn-action.delete { color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+
+    .chat-timeline {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .chat-bubble {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      position: relative;
+    }
+    .chat-bubble.user {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-bubble.ai {
+      align-self: flex-start;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #e0e7ff;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-bubble.admin {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 20px var(--primary-glow);
+    }
+    .bubble-author {
+      font-size: 10px;
+      font-weight: 800;
+      margin-bottom: 3px;
+      display: block;
+      opacity: 0.8;
+    }
+    .bubble-time {
+      font-size: 10px;
+      opacity: 0.6;
+      margin-top: 4px;
+      display: block;
+      text-align: right;
+    }
+
+    /* CHAT INPUT */
+    .chat-reply-area {
+      padding: 14px 20px;
+      background: var(--bg-darker);
+      border-top: 1px solid var(--border-card);
+      display: flex;
+      gap: 10px;
+    }
+    .chat-reply-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+    .chat-reply-input:focus { border-color: var(--primary); }
+    .btn-send-reply {
+      background: var(--primary);
+      border: none;
+      color: #fff;
+      padding: 0 22px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: filter 0.2s ease;
+    }
+    .btn-send-reply:hover { filter: brightness(1.15); }
+
+    /* EMPTY STATE */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      gap: 12px;
+    }
+
+    /* AUTH MODAL */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .auth-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 32px;
+      width: 380px;
+      max-width: 90vw;
+      text-align: center;
+    }
+    .auth-title {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .auth-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .btn-auth-submit {
+      width: 100%;
+      background: var(--primary);
+      border: none;
+      color: #fff;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AUTH MODAL -->
+  <div class="auth-overlay" id="authModal">
+    <div class="auth-card">
+      <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
+      <div class="auth-title">Quản Trị SmileX Chat Hub</div>
+      <p style="font-size: 13px; color: var(--text-muted);">Vui lòng nhập mật khẩu quản trị để truy cập hộp thư trung tâm</p>
+      <form onsubmit="handleLogin(event)">
+        <input type="password" id="authPassword" class="auth-input" placeholder="Nhập mật khẩu (smilex2026)" required autofocus>
+        <button type="submit" class="btn-auth-submit">Đăng Nhập Quản Trị</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOP NAVBAR -->
+  <header class="admin-navbar">
+    <a href="/" class="admin-brand">
+      <span class="admin-brand-icon">🚀</span>
+      <span class="admin-brand-title">SmileX Chat Hub</span>
+      <span class="admin-badge">Admin Workspace</span>
+    </a>
+    <div class="admin-stats-row">
+      <div class="stat-chip">💬 Tổng phiên: <b id="statSessions">0</b></div>
+      <div class="stat-chip">🌐 Website: <b id="statSites">0</b></div>
+      <div class="stat-chip">🤖 AI Trả Lời: <b id="statAi">0</b></div>
+      <button class="btn-logout" onclick="logout()">Đăng Xuất</button>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <main class="admin-workspace">
+    <!-- LEFT INBOX LIST -->
+    <section class="inbox-pane">
+      <div class="inbox-header">
+        <input type="text" id="inboxSearch" class="inbox-search" placeholder="🔍 Tìm theo tên, SĐT, nội dung..." oninput="renderSessionList()">
+        <div class="inbox-filters">
+          <button class="filter-btn active" onclick="setFilter('all', this)">Tất Cả</button>
+          <button class="filter-btn" onclick="setFilter('bike', this)">🚴 Bike</button>
+          <button class="filter-btn" onclick="setFilter('web1tr', this)">🌐 Web 1Tr</button>
+          <button class="filter-btn" onclick="setFilter('spa', this)">🦷 Spa / Y Tế</button>
+        </div>
+      </div>
+      <div class="inbox-list" id="inboxList">
+        <div style="text-align:center; padding: 30px; color: var(--text-muted); font-size:13px;">Đang tải danh sách hội thoại...</div>
+      </div>
+    </section>
+
+    <!-- RIGHT CHAT DETAIL -->
+    <section class="chat-pane" id="chatPane">
+      <div class="empty-state" id="emptyChat">
+        <span style="font-size: 50px;">💬</span>
+        <div>Chọn một cuộc hội thoại bên trái để bắt đầu chat trực tiếp</div>
+      </div>
+
+      <div id="activeChatContainer" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+        <div class="chat-pane-header">
+          <div class="chat-pane-user-info">
+            <b id="activeCustomerName">Khách Web</b>
+            <span id="activeCustomerDetails">SĐT: --- • Kênh: ---</span>
+          </div>
+          <div class="chat-pane-actions">
+            <a id="btnCallPhone" href="#" class="btn-action" target="_blank">📞 Gọi</a>
+            <a id="btnZaloChat" href="#" class="btn-action" target="_blank">💬 Zalo</a>
+            <button class="btn-action delete" onclick="deleteActiveSession()">🗑️ Xóa</button>
+          </div>
+        </div>
+
+        <div class="chat-timeline" id="chatTimeline"></div>
+
+        <form class="chat-reply-area" onsubmit="handleSendReply(event)">
+          <input type="text" id="replyInput" class="chat-reply-input" placeholder="Gõ tin nhắn trả lời khách (sẽ đồng bộ cả web & Telegram)..." autocomplete="off" required>
+          <button type="submit" class="btn-send-reply">Gửi ➤</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let adminToken = localStorage.getItem('sx_admin_pwd') || '';
+    let allSessions = [];
+    let currentFilter = 'all';
+    let activeSessionId = null;
+    let pollInterval = null;
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('authPassword').value.trim();
+      if (!pwd) return;
+      adminToken = pwd;
+      localStorage.setItem('sx_admin_pwd', pwd);
+      document.getElementById('authModal').style.display = 'none';
+      initDashboard();
+    }
+
+    function logout() {
+      localStorage.removeItem('sx_admin_pwd');
+      location.reload();
+    }
+
+    async function fetchSessions() {
+      try {
+        const res = await fetch(`/api/admin?action=get_sessions&pwd=${encodeURIComponent(adminToken)}`);
+        if (res.status === 401) {
+          document.getElementById('authModal').style.display = 'flex';
+          return;
+        }
+        const data = await res.json();
+        if (data.success) {
+          allSessions = data.sessions || [];
+          document.getElementById('statSessions').innerText = data.stats?.total_sessions || allSessions.length;
+          document.getElementById('statSites').innerText = data.stats?.active_sites || 0;
+          document.getElementById('statAi').innerText = data.stats?.total_ai_replies || 0;
+          renderSessionList();
+
+          if (activeSessionId) {
+            loadActiveChat(activeSessionId, false);
+          }
+        }
+      } catch (err) {
+        console.error('Fetch sessions error:', err);
+      }
+    }
+
+    function setFilter(site, btn) {
+      currentFilter = site;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderSessionList();
+    }
+
+    function renderSessionList() {
+      const listEl = document.getElementById('inboxList');
+      const keyword = document.getElementById('inboxSearch').value.toLowerCase().trim();
+
+      const filtered = allSessions.filter(s => {
+        const matchSite = currentFilter === 'all' || s.site_id?.toLowerCase().includes(currentFilter);
+        const matchText = !keyword || 
+          (s.name && s.name.toLowerCase().includes(keyword)) ||
+          (s.phone && s.phone.includes(keyword)) ||
+          (s.last_message && s.last_message.toLowerCase().includes(keyword));
+        return matchSite && matchText;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; padding: 40px 10px; color: var(--text-muted); font-size:13px;">Không có hội thoại nào</div>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(s => {
+        const isActive = s.session_id === activeSessionId ? 'active' : '';
+        const siteClass = s.site_id || 'default';
+        const displayTime = s.updated_at ? new Date(s.updated_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
+
+        return `
+          <div class="session-card ${isActive}" onclick="selectSession('${s.session_id}')">
+            <div class="session-card-top">
+              <span class="session-name">
+                ${escapeHtml(s.name || 'Khách Web')}
+                <span class="site-tag ${siteClass}">${s.site_id || 'WEB'}</span>
+              </span>
+              <span class="session-time">${displayTime}</span>
+            </div>
+            <div class="session-preview">
+              ${s.last_sender === 'user' ? '<b>Khách:</b> ' : (s.last_sender === 'ai' ? '🤖 ' : '👨‍💻 Bạn: ')}
+              ${escapeHtml(s.last_message || 'Bắt đầu cuộc trò chuyện...')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function selectSession(sessionId) {
+      activeSessionId = sessionId;
+      renderSessionList();
+      await loadActiveChat(sessionId, true);
+    }
+
+    async function loadActiveChat(sessionId, scrollToBottom = false) {
+      try {
+        const res = await fetch(`/api/admin?action=get_messages&sessionId=${sessionId}&pwd=${encodeURIComponent(adminToken)}`);
+        const data = await res.json();
+        if (data.success) {
+          const sess = data.session || {};
+          const msgs = data.messages || [];
+
+          document.getElementById('emptyChat').style.display = 'none';
+          const container = document.getElementById('activeChatContainer');
+          container.style.display = 'flex';
+
+          document.getElementById('activeCustomerName').innerText = sess.name || 'Khách Web';
+          document.getElementById('activeCustomerDetails').innerText = `SĐT: ${sess.phone || 'Chưa cung cấp'} • Kênh: ${sess.site_id || 'Web'} • Thread ID: #${sess.thread_id || '---'}`;
+
+          const phone = sess.phone ? sess.phone.replace(/[^0-9]/g, '') : '';
+          document.getElementById('btnCallPhone').href = phone ? `tel:${phone}` : '#';
+          document.getElementById('btnZaloChat').href = phone ? `https://zalo.me/${phone}` : '#';
+
+          const timeline = document.getElementById('chatTimeline');
+          timeline.innerHTML = msgs.map(m => {
+            let author = 'Khách';
+            if (m.sender === 'ai') author = '🤖 AI Tự Động';
+            else if (m.sender === 'admin') author = '👨‍💻 Quản Trị Viên';
+
+            return `
+              <div class="chat-bubble ${m.sender}">
+                <span class="bubble-author">${author}</span>
+                <div>${escapeHtml(m.text)}</div>
+                <span class="bubble-time">${m.timestamp || ''}</span>
+              </div>
+            `;
+          }).join('');
+
+          if (scrollToBottom) {
+            timeline.scrollTop = timeline.scrollHeight;
+          }
+        }
+      } catch (err) {
+        console.error('Load chat error:', err);
+      }
+    }
+
+    async function handleSendReply(e) {
+      e.preventDefault();
+      const input = document.getElementById('replyInput');
+      const text = input.value.trim();
+      if (!text || !activeSessionId) return;
+
+      input.value = '';
+
+      try {
+        const res = await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'send_reply',
+            password: adminToken,
+            sessionId: activeSessionId,
+            replyText: text
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadActiveChat(activeSessionId, true);
+          fetchSessions();
+        }
+      } catch (err) {
+        console.error('Send reply error:', err);
+      }
+    }
+
+    async function deleteActiveSession() {
+      if (!activeSessionId) return;
+      if (!confirm('Bạn có chắc chắn muốn xóa phiên chat này vĩnh viễn?')) return;
+
+      try {
+        await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete_session',
+            password: adminToken,
+            sessionId: activeSessionId
+          })
+        });
+        activeSessionId = null;
+        document.getElementById('activeChatContainer').style.display = 'none';
+        document.getElementById('emptyChat').style.display = 'flex';
+        fetchSessions();
+      } catch (err) {
+        console.error('Delete session error:', err);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, '<br>');
+    }
+
+    function initDashboard() {
+      fetchSessions();
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(fetchSessions, 4000);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (adminToken) {
+        document.getElementById('authModal').style.display = 'none';
+        initDashboard();
+      } else {
+        document.getElementById('authModal').style.display = 'flex';
+      }
+    });
+  </script>
+</body>
+</html>
