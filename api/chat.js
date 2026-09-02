@@ -1,6 +1,6 @@
 // ==============================================================================
-// SMILEX CENTRALIZED CHAT HUB API (/api/chat)
-// Multi-Tenant, Cloudflare D1 Storage, Groq AI & Dynamic Knowledge Base
+// SMILEX CHAT HUB - CENTRALIZED MULTI-TENANT CHAT API v2.0
+// Multi-Turn Context • Smart Hot Lead • Human Takeover • Hybrid Dynamic Data
 // ==============================================================================
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8539622251:AAFAY3UlPj5X--2sjGwv0EtsxKUxF9GSLiU';
@@ -11,7 +11,6 @@ const D1_AUTH_TOKEN = process.env.CLOUDFLARE_D1_TOKEN || (['cfat_', 'AUm2HPlTMQG
 const D1_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || 'df09cc22e45b91c6e1cae29f9f3aeb31';
 const D1_DATABASE_ID = process.env.CLOUDFLARE_D1_DB_ID || '1347e92e-d0ed-4820-bf66-cf735cab63e4';
 
-// DEFAULT GROUP MAPPING BY SITE ID
 const DEFAULT_GROUP_MAP = {
   'bike': '-1004298681574',
   'bike-rental': '-1004298681574',
@@ -36,45 +35,46 @@ async function queryD1(sql, params = []) {
     }
     return [];
   } catch (err) {
-    console.error('Hub D1 Query Error:', err);
+    console.error('D1 Query Error:', err);
     return [];
   }
 }
 
-async function sendTelegramMessage(chatId, text, messageThreadId = null) {
+async function sendTelegramMessage(chatId, text, threadId = null) {
   try {
-    const body = {
+    const payload = {
       chat_id: chatId,
       text: text,
       parse_mode: 'HTML'
     };
-    if (messageThreadId) {
-      body.message_thread_id = messageThreadId;
+    if (threadId) {
+      payload.message_thread_id = parseInt(threadId, 10);
     }
-    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(payload)
     });
-    return await res.json();
-  } catch (err) {
-    console.error('Telegram Send Error:', err);
-    return null;
+  } catch (e) {
+    console.error('Telegram Send Error:', e);
   }
 }
 
-async function createTelegramForumTopic(groupId, title) {
+async function createTelegramForumTopic(chatId, title) {
   try {
     const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/createForumTopic`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: groupId,
-        name: title
+        chat_id: chatId,
+        name: title.slice(0, 120)
       })
     });
     const data = await res.json();
-    if (data.ok && data.result) return data.result.message_thread_id;
+    if (data.ok && data.result) {
+      return data.result.message_thread_id;
+    }
     return null;
   } catch (e) {
     console.error('Create Forum Topic Error:', e);
@@ -82,7 +82,7 @@ async function createTelegramForumTopic(groupId, title) {
   }
 }
 
-async function generateHubAiResponse(siteId, botName, customPrompt, userMessage) {
+async function generateHubAiResponse(siteId, botName, customPrompt, userMessage, sessionId) {
   // 1. Fetch dynamic knowledge from D1
   let systemPrompt = customPrompt || '';
   let knowledgeText = '';
@@ -109,35 +109,77 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
     }
   } catch (e) {}
 
-  // 3. Fallback prompts if not set
+  // 3. Fallback persona prompts (100% Human-Like, strictly forbid AI identity)
   if (!systemPrompt) {
     if (siteId.includes('bike')) {
-      systemPrompt = `Bạn là Lễ Tân Trực Tuyến của SmileX Bike Pleiku (bike.smilex.vn). Bạn là người thật, tận tâm, mến khách Gia Lai. Tuyệt đối KHÔNG xưng là AI/bot.`;
+      systemPrompt = `Bạn là Lễ Tân Trực Tuyến của SmileX Bike Pleiku (197 Nguyễn Tất Thành, Pleiku, Gia Lai). Bạn là người thật 100%, tận tâm, mến khách Gia Lai, trò chuyện thân tình xưng "dạ em chào anh/chị", "bên em".`;
     } else if (siteId.includes('web')) {
-      systemPrompt = `Bạn là Chuyên viên Tư Vấn SmileX Web (web.smilex.vn). Bạn là người thật, chuyên nghiệp, nhiệt tình. Tuyệt đối KHÔNG xưng là AI/bot.`;
+      systemPrompt = `Bạn là Ngọc Mai, chuyên viên tư vấn trực tiếp của SmileX Web (web.smilex.vn). Bạn là người thật 100%, chuyên nghiệp, nhiệt tình, xưng "dạ em chào anh/chị", "bên em".`;
     } else {
-      systemPrompt = `Bạn là Chuyên viên Chăm sóc Khách hàng của ${botName || 'SmileX'}. Hãy tư vấn lịch sự, tận tâm, chu đáo cho khách hàng (khoảng 2-3 câu). Tuyệt đối không xưng là AI hay bot.`;
+      systemPrompt = `Bạn là ${botName || 'Chuyên viên Tư Vấn'}. Bạn là người thật 100%, tư vấn lịch sự, tận tâm, chu đáo cho khách hàng.`;
     }
   }
 
-  // 4. Construct Final Comprehensive AI Context
+  // 4. HYBRID DYNAMIC DATA CONTEXT (Cách 3: Query trực tiếp D1 cho trang nội bộ SmileX Bike)
+  let dynamicDataContext = '';
+  if (siteId.includes('bike')) {
+    try {
+      const bikeRows = await queryD1('SELECT name, type, price, status FROM bikes LIMIT 10;');
+      if (bikeRows && bikeRows.length > 0) {
+        dynamicDataContext = `--- DỮ LIỆU THỰC TẾ: DANH SÁCH XE HIỆN CÓ TẠI TIỆM PLEIKU ---\n` +
+          bikeRows.map(b => `- ${b.name} (${b.type}): Giá thuê ${Number(b.price || 50000).toLocaleString('vi-VN')}đ/ngày [${b.status === 'rented' ? 'Đã cho thuê' : 'Đang sẵn sàng'}]`).join('\n') + '\n\n';
+      }
+    } catch (e) {}
+  }
+
+  // 5. Construct Final Comprehensive AI Context
   let finalPrompt = `${systemPrompt}\n\n`;
 
+  if (dynamicDataContext) {
+    finalPrompt += dynamicDataContext;
+  }
+
   if (knowledgeText) {
-    finalPrompt += `--- BẢNG THÔNG TIN & TRI THỨC CỐT LÕI VỀ CỬA HÀNG/DỊCH VỤ ---\n${knowledgeText}\n\n`;
+    finalPrompt += `--- BẢNG TRI THỨC CỐT LÕI DỊCH VỤ ---\n${knowledgeText}\n\n`;
   }
 
   if (learnedQA.length > 0) {
-    finalPrompt += `--- CÁC CÂU TRẢ LỜI MẪU CHUẨN TỪ QUẢN TRỊ VIÊN ĐÃ HƯỚNG DẪN ---\n`;
+    finalPrompt += `--- CÂU TRẢ LỜI MẪU CHUẨN TỪ QUẢN TRỊ VIÊN ĐÃ DẠY ---\n`;
     for (const qa of learnedQA) {
-      finalPrompt += `- Khách hỏi: "${qa.user_question}" -> Trả lời chuẩn: "${qa.admin_answer}"\n`;
+      finalPrompt += `- Khách hỏi: "${qa.user_question}" -> Trả lời: "${qa.admin_answer}"\n`;
     }
     finalPrompt += `\n`;
   }
 
-  finalPrompt += `Quy tắc trả lời:
-- Luôn giữ thái độ thân thiện, tự nhiên, trả lời đúng trọng tâm dựa trên bảng tri thức phía trên (khoảng 2-4 câu).
-- Nếu thông tin nào không có trong bảng tri thức, trả lời lịch sự và xin số điện thoại để chuyên viên tư vấn chi tiết hơn.`;
+  finalPrompt += `QUY TẮC VÀNG VỀ XƯNG HÔ VÀ PHONG CÁCH TRÒ CHUYỆN:
+1. BẠN LÀ NGƯỜI THẬT 100%, TUYỆT ĐỐI KHÔNG BAO GIỜ XƯNG LÀ AI, BOT HAY TRỢ LÝ ẢO.
+2. Nếu khách gài hỏi "Em là người thật hay robot/AI?", hãy đối đáp tự nhiên: "Dạ em là ${botName}, nhân viên trực tổng đài tư vấn của SmileX đây ạ! Anh/chị cần em hỗ trợ chi tiết gì cứ nhắn em nhé!" kèm icon thân thiện 😊.
+3. Độ dài câu trả lời: Chỉ từ 2 đến 3 câu ngắn gọn, chuẩn phong cách nhắn tin Zalo/Messenger, dễ đọc trên điện thoại. Tuyệt đối không viết bài dài, không chia danh sách dài dòng như văn mẫu.
+4. Nếu khách để lại SĐT hoặc hỏi thông tin nằm ngoài bảng tri thức: Hãy khéo léo báo "Dạ em đã ghi nhận yêu cầu của mình rồi ạ, chuyên viên bên em sẽ gọi lại hỗ trợ chi tiết cho mình ngay nhé!".
+5. Khéo léo gợi mở xin SĐT của khách ở cuối câu khi khách đang quan tâm dịch vụ để chuyên viên gọi tư vấn kỹ hơn.`;
+
+  // 6. MULTI-TURN CONVERSATION MEMORY (Nạp 6 tin nhắn gần nhất)
+  let conversationHistory = [];
+  if (sessionId) {
+    try {
+      const prevRows = await queryD1(
+        'SELECT sender, text FROM hub_chat_messages WHERE session_id = ? ORDER BY created_at ASC LIMIT 6;',
+        [sessionId]
+      );
+      if (prevRows && prevRows.length > 0) {
+        conversationHistory = prevRows.map(r => ({
+          role: r.sender === 'user' ? 'user' : 'assistant',
+          content: r.text
+        }));
+      }
+    } catch (e) {}
+  }
+
+  const messagesPayload = [
+    { role: 'system', content: finalPrompt },
+    ...conversationHistory,
+    { role: 'user', content: userMessage }
+  ];
 
   // 1. ENGINE 1 (PRIMARY): DeepSeek V3.2 Full Model via Xkiro
   try {
@@ -152,10 +194,7 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
       },
       body: JSON.stringify({
         model: 'deepseek/deepseek-v3.2',
-        messages: [
-          { role: 'system', content: finalPrompt },
-          { role: 'user', content: userMessage }
-        ],
+        messages: messagesPayload,
         temperature: 0.5,
         max_tokens: 300
       })
@@ -178,10 +217,7 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
       },
       body: JSON.stringify({
         model: 'qwen/qwen3.8-27b',
-        messages: [
-          { role: 'system', content: finalPrompt },
-          { role: 'user', content: userMessage }
-        ],
+        messages: messagesPayload,
         temperature: 0.5,
         max_tokens: 250
       })
@@ -193,7 +229,7 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
     console.error('Groq AI Fallback Error:', e);
   }
 
-  return `Chào bạn! Cảm ơn bạn đã nhắn tin cho ${botName || 'chúng tôi'}. Chuyên viên của chúng tôi đã nhận được thông tin và sẽ hỗ trợ giải đáp ngay cho bạn nhé!`;
+  return `Dạ em chào anh/chị! Em đã nhận được tin nhắn của mình rồi ạ. Chuyên viên bên em sẽ kiểm tra thông tin và hỗ trợ giải đáp ngay cho mình nhé!`;
 }
 
 export default async function handler(req, res) {
@@ -202,13 +238,13 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const paramsObj = { ...(req.query || {}), ...(req.body || {}) };
-  const { action, siteId = 'default', sessionId, message, botName = 'SmileX Concierge', groupId, customPrompt, guestName, guestPhone, welcome } = paramsObj;
+  const { action, siteId = 'default', sessionId, message, botName = 'Tư Vấn Viên SmileX', groupId, customPrompt, guestName, guestPhone, welcome, currentUrl, userAgent } = paramsObj;
 
   if (!sessionId) {
     return res.status(400).json({ error: 'Thiếu sessionId' });
   }
 
-  // Lookup target group from D1 site_knowledge or fallback mapping
+  // Lookup target Telegram group
   let effectiveGroupId = groupId;
   if (!effectiveGroupId) {
     const kRows = await queryD1('SELECT group_id FROM hub_site_knowledge WHERE site_id = ? LIMIT 1;', [siteId]);
@@ -233,7 +269,7 @@ export default async function handler(req, res) {
         {
           id: 'welcome',
           sender: 'ai',
-          text: welcome ? decodeURIComponent(welcome) : '👋 Chào bạn! Chúng tôi có thể giúp gì cho bạn hôm nay?',
+          text: welcome ? decodeURIComponent(welcome) : 'Dạ em chào anh/chị! Em có thể hỗ trợ giải đáp thắc mắc hoặc tư vấn dịch vụ gì cho mình hôm nay ạ?',
           timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
         }
       ];
@@ -252,16 +288,38 @@ export default async function handler(req, res) {
 
     // Ensure session in D1 & Telegram Topic
     let threadId = null;
-    const sessRows = await queryD1('SELECT thread_id, group_id FROM hub_chat_sessions WHERE session_id = ? LIMIT 1;', [sessionId]);
+    const sessRows = await queryD1('SELECT thread_id, group_id, phone, name FROM hub_chat_sessions WHERE session_id = ? LIMIT 1;', [sessionId]);
     
+    // SMART LEAD CAPTURE: Detect Vietnamese phone number
+    const phoneRegex = /(?:0|\+84)(?:3[2-9]|5[2689]|7[06-9]|8[1-9]|9[0-9])[0-9]{7}\b/;
+    const phoneMatch = message.match(phoneRegex);
+    const detectedPhone = phoneMatch ? phoneMatch[0] : (guestPhone || sessRows?.[0]?.phone || '');
+
     if (sessRows && sessRows.length > 0 && sessRows[0].thread_id) {
       threadId = sessRows[0].thread_id;
+      if (detectedPhone && detectedPhone !== sessRows[0].phone) {
+        await queryD1('UPDATE hub_chat_sessions SET phone = ?, updated_at = CURRENT_TIMESTAMP WHERE session_id = ?;', [detectedPhone, sessionId]);
+      }
     } else {
-      const topicName = `💬 [${siteId.toUpperCase()}] ${guestName || 'Khách'} (${guestPhone || sessionId.slice(-4)})`;
+      // Gather geolocation / device context for new topic
+      const ipCity = req.headers['cf-ipcity'] || '';
+      const ipCountry = req.headers['cf-ipcountry'] || 'VN';
+      const isMobile = /mobile|iphone|android/i.test(userAgent || '');
+      const locationText = ipCity ? `${ipCity}, ${ipCountry}` : ipCountry;
+
+      const topicName = `💬 [${siteId.toUpperCase()}] ${guestName || 'Khách'} (${detectedPhone || sessionId.slice(-4)})`;
       threadId = await createTelegramForumTopic(effectiveGroupId, topicName);
+      
       await queryD1(
         'INSERT OR REPLACE INTO hub_chat_sessions (session_id, site_id, thread_id, group_id, name, phone, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);',
-        [sessionId, siteId, threadId, effectiveGroupId, guestName || 'Khách Web', guestPhone || '']
+        [sessionId, siteId, threadId, effectiveGroupId, guestName || 'Khách Web', detectedPhone]
+      );
+
+      // Send initial context card to Telegram Topic
+      await sendTelegramMessage(
+        effectiveGroupId,
+        `📍 <b>Khách mới truy cập:</b>\n- Vị trí: <b>${locationText}</b>\n- Thiết bị: <b>${isMobile ? 'Điện thoại 📱' : 'Máy tính 💻'}</b>\n- Đang xem: <code>${currentUrl || siteId}</code>`,
+        threadId
       );
     }
 
@@ -271,34 +329,62 @@ export default async function handler(req, res) {
       [userMsgId, sessionId, siteId, 'user', message, timeStr]
     );
 
-    // Send to Telegram Topic
-    const senderTitle = guestName ? `${guestName} (${guestPhone || siteId})` : `Khách (${siteId})`;
+    // Send user message to Telegram Topic
+    const senderTitle = guestName ? `${guestName} (${detectedPhone || siteId})` : `Khách (${siteId})`;
     await sendTelegramMessage(
       effectiveGroupId,
-      `<b>💬 Khách [${senderTitle}]:</b>\n${message}`,
+      `<b>💬 ${senderTitle}:</b>\n${message}`,
       threadId
     );
 
-    // Generate AI response
-    try {
-      const aiReplyText = await generateHubAiResponse(siteId, botName, customPrompt, message);
-      const aiMsgId = 'ai_' + Date.now();
-
-      await queryD1(
-        'INSERT INTO hub_chat_messages (id, session_id, site_id, sender, text, timestamp) VALUES (?, ?, ?, ?, ?, ?);',
-        [aiMsgId, sessionId, siteId, 'ai', aiReplyText, timeStr]
-      );
-
+    // If phone number just detected -> Send HOT LEAD alert!
+    if (phoneMatch) {
       await sendTelegramMessage(
         effectiveGroupId,
-        `<b>🤖 ${botName}:</b>\n${aiReplyText}`,
+        `🚨 <b>[HOT LEAD - KHÁCH ĐÃ ĐỂ LẠI SỐ ĐIỆN THOẠI!]</b> 🔥\n\n👤 Khách hàng: <b>${guestName || 'Khách Web'}</b>\n📞 Số điện thoại: <code>${detectedPhone}</code>\n🌐 Nguồn: <b>${siteId}</b>\n💬 Yêu cầu: "${message}"\n\n👉 <i>Admin hãy gọi điện tư vấn và chốt đơn ngay nhé!</i>`,
         threadId
       );
-    } catch (e) {
-      console.error('AI error:', e);
     }
 
-    // Return full message history
+    // HUMAN TAKEOVER CHECK: If admin replied within last 20 mins, AI pauses!
+    let isHumanTakeover = false;
+    try {
+      const lastAdminMsg = await queryD1(
+        "SELECT created_at FROM hub_chat_messages WHERE session_id = ? AND sender = 'admin' ORDER BY created_at DESC LIMIT 1;",
+        [sessionId]
+      );
+      if (lastAdminMsg && lastAdminMsg[0]?.created_at) {
+        const diffSeconds = (Date.now() - new Date(lastAdminMsg[0].created_at).getTime()) / 1000;
+        if (diffSeconds < 1200) { // 20 minutes
+          isHumanTakeover = true;
+        }
+      }
+    } catch (e) {}
+
+    // Generate AI response only if human admin is NOT actively taking over
+    if (!isHumanTakeover) {
+      try {
+        const aiReplyText = await generateHubAiResponse(siteId, botName, customPrompt, message, sessionId);
+        const aiMsgId = 'ai_' + Date.now();
+
+        await queryD1(
+          'INSERT INTO hub_chat_messages (id, session_id, site_id, sender, text, timestamp) VALUES (?, ?, ?, ?, ?, ?);',
+          [aiMsgId, sessionId, siteId, 'ai', aiReplyText, timeStr]
+        );
+
+        await sendTelegramMessage(
+          effectiveGroupId,
+          `<b>👤 ${botName}:</b>\n${aiReplyText}`,
+          threadId
+        );
+      } catch (e) {
+        console.error('AI error:', e);
+      }
+    } else {
+      console.log(`Human takeover active for session ${sessionId}, AI skipped.`);
+    }
+
+    // Return full message history to client
     const updatedRows = await queryD1(
       'SELECT id, sender, text, timestamp FROM hub_chat_messages WHERE session_id = ? ORDER BY created_at ASC;',
       [sessionId]

@@ -76,6 +76,46 @@ export default async function handler(req, res) {
       }
 
       if (targetSession) {
+        // Support Commands in Telegram Topic: /ai_on, /ai_off
+        if (text.trim() === '/ai_on') {
+          // Remove recent admin markers to immediately resume AI
+          await queryD1(
+            "UPDATE hub_chat_messages SET created_at = datetime('now', '-1 hour') WHERE session_id = ? AND sender = 'admin';",
+            [targetSession.session_id]
+          );
+          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN || '8539622251:AAFAY3UlPj5X--2sjGwv0EtsxKUxF9GSLiU'}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: tgMsg.chat.id,
+              message_thread_id: threadId,
+              text: '✅ <b>Đã BẬT lại chế độ tư vấn tự động (AI)!</b> AI sẽ tiếp tục hỗ trợ khách hàng ngay khi có tin nhắn mới.',
+              parse_mode: 'HTML'
+            })
+          });
+          return res.status(200).json({ ok: true, command: 'ai_on' });
+        }
+
+        if (text.trim() === '/ai_off') {
+          const msgId = 'admin_' + Date.now();
+          const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          await queryD1(
+            'INSERT INTO hub_chat_messages (id, session_id, site_id, sender, text, timestamp) VALUES (?, ?, ?, ?, ?, ?);',
+            [msgId, targetSession.session_id, targetSession.site_id, 'admin', '[Admin đã tiếp quản phiên chat]', timeStr]
+          );
+          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN || '8539622251:AAFAY3UlPj5X--2sjGwv0EtsxKUxF9GSLiU'}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: tgMsg.chat.id,
+              message_thread_id: threadId,
+              text: '⏸️ <b>Đã TẮT AI cho phiên này.</b> Bạn đang tiếp quản tư vấn 100% người thật. Gõ <code>/ai_on</code> để bật lại khi cần.',
+              parse_mode: 'HTML'
+            })
+          });
+          return res.status(200).json({ ok: true, command: 'ai_off' });
+        }
+
         const msgId = 'admin_' + Date.now();
         const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
