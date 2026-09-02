@@ -139,10 +139,10 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
 - Luôn giữ thái độ thân thiện, tự nhiên, trả lời đúng trọng tâm dựa trên bảng tri thức phía trên (khoảng 2-4 câu).
 - Nếu thông tin nào không có trong bảng tri thức, trả lời lịch sự và xin số điện thoại để chuyên viên tư vấn chi tiết hơn.`;
 
-  // 1. ENGINE 1 (PRIMARY): DeepSeek V4 Flash via Xkiro
+  // 1. ENGINE 1 (PRIMARY): DeepSeek V3.2 Full Model via Xkiro
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 7500);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     const xkiroRes = await fetch('https://api.xkiro.com/v1/chat/completions', {
       method: 'POST',
       signal: controller.signal,
@@ -151,7 +151,7 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-v4-flash',
+        model: 'deepseek/deepseek-v3.2',
         messages: [
           { role: 'system', content: finalPrompt },
           { role: 'user', content: userMessage }
@@ -165,7 +165,7 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
     const xkiroText = xkiroData.choices?.[0]?.message?.content;
     if (xkiroText) return xkiroText.trim();
   } catch (e) {
-    console.warn('Xkiro DeepSeek V4 Flash primary failed, falling back to Groq:', e.message);
+    console.warn('Xkiro DeepSeek V3.2 primary failed, falling back to Groq:', e.message);
   }
 
   // 2. ENGINE 2 (FALLBACK): Groq LPU
