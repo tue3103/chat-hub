@@ -229,7 +229,7 @@
       .replace(/\n/g, '<br>');
   }
 
-  // 5. GLOBAL SDK EXPORT
+  // 5. GLOBAL SDK EXPORT & BACKWARD COMPATIBILITY
   window.SmileXChat = {
     open: () => { if (!isChatOpen) toggleChat(); },
     close: () => { if (isChatOpen) toggleChat(); },
@@ -237,6 +237,11 @@
     send: (text, name, phone) => openChatWithMessage(text, name, phone),
     getSessionId: () => sessionId
   };
+
+  // Backwards compatibility for any website calling legacy toggleChat / quickBookPrompt
+  window.toggleChat = toggleChat;
+  window.openChatWithMessage = openChatWithMessage;
+  window.quickBookPrompt = (text) => openChatWithMessage(text);
 
   // Wait for DOM ready
   if (document.readyState === 'loading') {
