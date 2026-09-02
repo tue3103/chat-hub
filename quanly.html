@@ -518,6 +518,7 @@
         <input type="text" id="inboxSearch" class="inbox-search" placeholder="🔍 Tìm theo tên, SĐT, nội dung..." oninput="renderSessionList()">
         <div class="inbox-filters">
           <button class="filter-btn active" onclick="setFilter('all', this)">Tất Cả</button>
+          <button class="filter-btn" onclick="setFilter('hot_leads', this)" style="color:#f87171;">🔥 Có SĐT</button>
           <button class="filter-btn" onclick="setFilter('bike', this)">🚴 Bike</button>
           <button class="filter-btn" onclick="setFilter('web', this)">🌐 Web</button>
         </div>
@@ -704,7 +705,11 @@
       const keyword = document.getElementById('inboxSearch').value.toLowerCase().trim();
 
       const filtered = allSessions.filter(s => {
-        const matchSite = currentFilter === 'all' || s.site_id?.toLowerCase().includes(currentFilter);
+        let matchSite = false;
+        if (currentFilter === 'all') matchSite = true;
+        else if (currentFilter === 'hot_leads') matchSite = !!(s.phone && s.phone.trim());
+        else matchSite = s.site_id?.toLowerCase().includes(currentFilter);
+
         const matchText = !keyword || 
           (s.name && s.name.toLowerCase().includes(keyword)) ||
           (s.phone && s.phone.includes(keyword)) ||
@@ -721,6 +726,9 @@
         const isActive = s.session_id === activeSessionId ? 'active' : '';
         const siteClass = s.site_id || 'default';
         const displayTime = s.updated_at ? new Date(s.updated_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
+        const phoneBadge = (s.phone && s.phone.trim()) 
+          ? `<span style="background:rgba(239, 68, 68, 0.2); color:#f87171; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px; border:1px solid rgba(239, 68, 68, 0.4); margin-left:4px;">🔥 ${escapeHtml(s.phone)}</span>` 
+          : '';
 
         return `
           <div class="session-card ${isActive}" onclick="selectSession('${s.session_id}')">
@@ -728,11 +736,12 @@
               <span class="session-name">
                 ${escapeHtml(s.name || 'Khách Web')}
                 <span class="site-tag ${siteClass}">${s.site_id || 'WEB'}</span>
+                ${phoneBadge}
               </span>
               <span class="session-time">${displayTime}</span>
             </div>
             <div class="session-preview">
-              ${s.last_sender === 'user' ? '<b>Khách:</b> ' : (s.last_sender === 'ai' ? '🤖 ' : '👨‍💻 Bạn: ')}
+              ${s.last_sender === 'user' ? '<b>Khách:</b> ' : (s.last_sender === 'ai' ? '👤 ' : '👨‍💻 Bạn: ')}
               ${escapeHtml(s.last_message || 'Bắt đầu cuộc trò chuyện...')}
             </div>
           </div>
