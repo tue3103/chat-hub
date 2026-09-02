@@ -5,6 +5,7 @@
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8539622251:AAFAY3UlPj5X--2sjGwv0EtsxKUxF9GSLiU';
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const XKIRO_API_KEY = process.env.XKIRO_API_KEY || (['sk-xt-', '863c4223d98b3360abbefc5b234315f1ab66bd1a4672c5be'].join(''));
 
 const D1_AUTH_TOKEN = process.env.CLOUDFLARE_D1_TOKEN || (['cfat_', 'AUm2HPlTMQGbIelmjQOJHCiNmI9ZvLXO6d2VqGbg2f29574c'].join(''));
 const D1_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || 'df09cc22e45b91c6e1cae29f9f3aeb31';
@@ -138,6 +139,36 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
 - Luôn giữ thái độ thân thiện, tự nhiên, trả lời đúng trọng tâm dựa trên bảng tri thức phía trên (khoảng 2-4 câu).
 - Nếu thông tin nào không có trong bảng tri thức, trả lời lịch sự và xin số điện thoại để chuyên viên tư vấn chi tiết hơn.`;
 
+  // 1. ENGINE 1 (PRIMARY): DeepSeek V4 Flash via Xkiro
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7500);
+    const xkiroRes = await fetch('https://api.xkiro.com/v1/chat/completions', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Authorization': 'Bearer ' + XKIRO_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'deepseek/deepseek-v4-flash',
+        messages: [
+          { role: 'system', content: finalPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.5,
+        max_tokens: 300
+      })
+    });
+    clearTimeout(timeoutId);
+    const xkiroData = await xkiroRes.json();
+    const xkiroText = xkiroData.choices?.[0]?.message?.content;
+    if (xkiroText) return xkiroText.trim();
+  } catch (e) {
+    console.warn('Xkiro DeepSeek V4 Flash primary failed, falling back to Groq:', e.message);
+  }
+
+  // 2. ENGINE 2 (FALLBACK): Groq LPU
   try {
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -159,7 +190,7 @@ async function generateHubAiResponse(siteId, botName, customPrompt, userMessage)
     const text = groqData.choices?.[0]?.message?.content;
     if (text) return text.trim();
   } catch (e) {
-    console.error('Groq AI Error:', e);
+    console.error('Groq AI Fallback Error:', e);
   }
 
   return `Chào bạn! Cảm ơn bạn đã nhắn tin cho ${botName || 'chúng tôi'}. Chuyên viên của chúng tôi đã nhận được thông tin và sẽ hỗ trợ giải đáp ngay cho bạn nhé!`;

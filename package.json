@@ -1,6 +1,7 @@
 {
   "name": "smilex-chat-hub",
   "version": "1.0.0",
+  "type": "module",
   "description": "SmileX Centralized Live Chat & AI Concierge Hub",
   "main": "widget.js",
   "scripts": {
